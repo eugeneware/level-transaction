@@ -1,4 +1,5 @@
 var after = require('after'),
+    setImmediate = global.setImmediate || process.nextTick,
     unique = require('lodash.uniq');
 
 module.exports = tx;
@@ -44,10 +45,10 @@ function txBatch(batch, opts, cb) {
       if (err) return cb(err);
       return cb(null, {
         commit: function (_cb) {
-          return _cb(null);
+          setImmediate(_cb.bind(null));
         },
         rollback: function (_cb) {
-          db.batch(rollbackBatch, _cb);
+          return db.batch(rollbackBatch, _cb);
         }
       });
     });
@@ -82,7 +83,7 @@ function txPut(key, value, opts, cb) {
       if (err) return cb(err);
       return cb(null, {
         commit: function (_cb) {
-          return _cb(null);
+          setImmediate(_cb.bind(null));
         },
         rollback: function (_cb) {
           db.batch(rollbackBatch, _cb);
