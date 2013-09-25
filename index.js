@@ -16,7 +16,6 @@ function txBatch(batch, opts, cb) {
   }
 
   var db = this;
-  var args = [].slice.call(arguments);
 
   var rollbackBatch = [];
 
@@ -62,33 +61,5 @@ function txPut(key, value, opts, cb) {
   }
 
   var db = this;
-  var args = [].slice.call(arguments);
-
-  var rollbackBatch = [];
-  db.get(key, function (err, value) {
-    var type = 'put';
-    if (err) {
-      if (err.type !== 'NotFoundError') {
-        return cb(err);
-      } else {
-        type = 'del';
-      }
-    }
-    rollbackBatch.push({ type: type, key: key, value: value });
-    put();
-  });
-
-  function put() {
-    return db.put.call(db, key, value, opts, function (err) {
-      if (err) return cb(err);
-      return cb(null, {
-        commit: function (_cb) {
-          setImmediate(_cb.bind(null));
-        },
-        rollback: function (_cb) {
-          db.batch(rollbackBatch, _cb);
-        }
-      });
-    });
-  }
+  return db.txBatch([{ type: 'put', key: key, value: value }], opts, cb);
 }
