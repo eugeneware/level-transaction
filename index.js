@@ -9,7 +9,11 @@ function tx(db) {
   db.txDel = db.txDel || txDel.bind(db);
   db.txGet = db.txGet || txGet.bind(db);
   db._txKeys = [];
+  db._txTimeout = 500; // transaction timeout in ms
   return db;
+}
+
+function noop() {
 }
 
 function txGet(key, opts, cb) {
@@ -69,15 +73,22 @@ function txBatch(batch, opts, cb) {
   function _batch() {
     return db.batch.call(db, batch, opts, function (err) {
       if (err) return cb(err);
+
+      var tid = setTimeout(rollback, db._txTimeout);
+
+      function rollback(_cb) {
+        clearTimeout(tid);
+        unblockReads();
+        return db.batch(rollbackBatch, _cb || noop);
+      }
+
       return cb(null, {
         commit: function (_cb) {
+          clearTimeout(tid);
           unblockReads();
           setImmediate(_cb.bind(null));
         },
-        rollback: function (_cb) {
-          unblockReads();
-          return db.batch(rollbackBatch, _cb);
-        }
+        rollback: rollback
       });
     });
   }

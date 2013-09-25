@@ -297,4 +297,22 @@ describe('level-transaction', function() {
       });
     }
   });
+
+  it('should automatically roll back a transaction during timeouts', function(done) {
+    db = tx(db);
+
+    var start = Date.now();
+    db.txPut('key 1', 'value 1', function (err, tx) {
+      if (err) return done(err);
+      get1();
+    });
+
+    function get1() {
+      db.txGet('key 1', function (err, value) {
+        expect(err.type).to.equal('NotFoundError');
+        expect(Date.now() - start).to.be.above(500);
+        done();
+      });
+    }
+  });
 });
