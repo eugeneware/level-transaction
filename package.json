@@ -24,7 +24,10 @@
   "bugs": {
     "url": "https://github.com/eugeneware/level-transaction/issues"
   },
-  "dependencies": {},
+  "dependencies": {
+    "after": "~0.8.1",
+    "lodash.uniq": "~2.1.0"
+  },
   "devDependencies": {
     "expect.js": "~0.2.0",
     "grunt-contrib-jshint": "~0.6.4",
