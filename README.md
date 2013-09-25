@@ -70,9 +70,9 @@ Any `txPut` operations will block any other `txPut`, `txGet`, `txDel`, and
 `txBatch` operations where the keys intersect with the key being written for
 this `txPut` operation.
 
-### db#txGet(key, value[, opts][, callback])
+### db#txGet(key[, opts][, callback])
 
-Gets the `key` from the database.
+Gets the datq reference by `key` from the database.
 
 However, unlike a normal levelup `get`, a `txGet` will block and wait for
 any preceding `txPut`, `txDel`, `txBatch` operations that also contain the
