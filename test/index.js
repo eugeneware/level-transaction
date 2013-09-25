@@ -196,4 +196,29 @@ describe('level-transaction', function() {
       });
     }
   });
+
+  it('should block key writes during a transaction with rollback', function(done) {
+    db = tx(db);
+    var next = after(2, done);
+    db.txPut('key 1', 'value 1', function (err, tx) {
+      if (err) return done(err);
+      get1();
+      tx.rollback(get2);
+    });
+
+    function get1() {
+      db.txGet('key 1', function (err, value) {
+        expect(err.type).to.equal('NotFoundError');
+        next();
+      });
+    }
+
+    function get2(err) {
+      if (err) return done(err);
+      db.txGet('key 1', function (err, value) {
+        expect(err.type).to.equal('NotFoundError');
+        next();
+      });
+    }
+  });
 });
