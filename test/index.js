@@ -221,4 +221,80 @@ describe('level-transaction', function() {
       });
     }
   });
+
+  it('should block key deletes during a transaction', function(done) {
+    db = tx(db);
+    var batch = range(0, 10).map(function (i) {
+      return {
+        type: 'put',
+        key: 'key ' + i,
+        value: 'value ' + i
+      };
+    });
+
+    db.batch(batch, del);
+
+    var next = after(2, done);
+    function del() {
+      db.txDel('key 6', function (err, tx) {
+        if (err) return done(err);
+        get1();
+        tx.commit(get2);
+      });
+    }
+
+    function get1() {
+      db.txGet('key 6', function (err, value) {
+        expect(err.type).to.equal('NotFoundError');
+        next();
+      });
+    }
+
+    function get2(err) {
+      if (err) return done(err);
+      db.txGet('key 6', function (err, value) {
+        expect(err.type).to.equal('NotFoundError');
+        next();
+      });
+    }
+  });
+
+  it('should block key deletes during a transaction with rollback', function(done) {
+    db = tx(db);
+    var batch = range(0, 10).map(function (i) {
+      return {
+        type: 'put',
+        key: 'key ' + i,
+        value: 'value ' + i
+      };
+    });
+
+    db.batch(batch, del);
+
+    var next = after(2, done);
+    function del() {
+      db.txDel('key 6', function (err, tx) {
+        if (err) return done(err);
+        get1();
+        tx.rollback(get2);
+      });
+    }
+
+    function get1() {
+      db.txGet('key 6', function (err, value) {
+        if (err) return done(err);
+        expect(value).to.equal('value 6');
+        next();
+      });
+    }
+
+    function get2(err) {
+      if (err) return done(err);
+      db.txGet('key 6', function (err, value) {
+        if (err) return done(err);
+        expect(value).to.equal('value 6');
+        next();
+      });
+    }
+  });
 });
