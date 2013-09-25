@@ -6,6 +6,7 @@ module.exports = tx;
 function tx(db) {
   db.txPut = db.txPut || txPut.bind(db);
   db.txBatch = db.txBatch || txBatch.bind(db);
+  db.txDel = db.txDel || txDel.bind(db);
   return db;
 }
 
@@ -62,4 +63,14 @@ function txPut(key, value, opts, cb) {
 
   var db = this;
   return db.txBatch([{ type: 'put', key: key, value: value }], opts, cb);
+}
+
+function txDel(key, opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts;
+    opts = undefined;
+  }
+
+  var db = this;
+  return db.txBatch([{ type: 'del', key: key }], opts, cb);
 }

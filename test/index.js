@@ -111,4 +111,63 @@ describe('level-transaction', function() {
       done();
     }
   });
+
+  it('should be able to run a transactional del', function(done) {
+    db = tx(db);
+    var batch = range(0, 10).map(function (i) {
+      return {
+        type: 'put',
+        key: 'key ' + i,
+        value: 'value ' + i
+      };
+    });
+
+    db.batch(batch, del);
+
+    function del(err) {
+      if (err) return done(err);
+      db.txDel('key 8', function (err, tx) {
+        if (err) return done(err);
+        tx.commit(get);
+      });
+    }
+
+    function get(err) {
+      if (err) return done(err);
+      db.get('key 8', function (err, value) {
+        expect(err.type).to.equal('NotFoundError');
+        done();
+      });
+    }
+  });
+
+  it('should be able to run a transactional del with rollback', function(done) {
+    db = tx(db);
+    var batch = range(0, 10).map(function (i) {
+      return {
+        type: 'put',
+        key: 'key ' + i,
+        value: 'value ' + i
+      };
+    });
+
+    db.batch(batch, del);
+
+    function del(err) {
+      if (err) return done(err);
+      db.txDel('key 8', function (err, tx) {
+        if (err) return done(err);
+        tx.rollback(get);
+      });
+    }
+
+    function get(err) {
+      if (err) return done(err);
+      db.get('key 8', function (err, value) {
+        if (err) return done(err);
+        expect(value).to.equal('value 8');
+        done();
+      });
+    }
+  });
 });
