@@ -170,4 +170,30 @@ describe('level-transaction', function() {
       });
     }
   });
+
+  it('should block key writes during a transaction', function(done) {
+    db = tx(db);
+    var next = after(2, done);
+    db.txPut('key 1', 'value 1', function (err, tx) {
+      if (err) return done(err);
+      get1();
+      tx.commit(get2);
+    });
+
+    function get1() {
+      db.txGet('key 1', function (err, value) {
+        if (err) return done(err);
+        expect(value).to.equal('value 1');
+        next();
+      });
+    }
+
+    function get2(err) {
+      if (err) return done(err);
+      db.txGet('key 1', function (err, value) {
+        expect(value).to.equal('value 1');
+        next();
+      });
+    }
+  });
 });

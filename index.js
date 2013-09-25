@@ -7,7 +7,25 @@ function tx(db) {
   db.txPut = db.txPut || txPut.bind(db);
   db.txBatch = db.txBatch || txBatch.bind(db);
   db.txDel = db.txDel || txDel.bind(db);
+  db.txGet = db.txGet || txGet.bind(db);
+  db._txKeys = [];
   return db;
+}
+
+function txGet(key, opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts;
+    opts = undefined;
+  }
+  var db = this;
+  var check = function () {
+    if (~db._txKeys.indexOf(key)) {
+      setImmediate(check);
+    } else {
+      db.get(key, opts, cb);
+    }
+  };
+  check();
 }
 
 function txBatch(batch, opts, cb) {
@@ -23,6 +41,8 @@ function txBatch(batch, opts, cb) {
   var keys = unique(batch.map(function (op) {
     return op.key;
   }));
+
+  db._txKeys = db._txKeys.concat(keys);
 
   var next = after(keys.length, _batch);
   keys.forEach(function (key) {
@@ -40,14 +60,22 @@ function txBatch(batch, opts, cb) {
     });
   });
 
+  function unblockReads() {
+    db._txKeys = db._txKeys.filter(function (key) {
+      return !~keys.indexOf(key);
+    });
+  }
+
   function _batch() {
     return db.batch.call(db, batch, opts, function (err) {
       if (err) return cb(err);
       return cb(null, {
         commit: function (_cb) {
+          unblockReads();
           setImmediate(_cb.bind(null));
         },
         rollback: function (_cb) {
+          unblockReads();
           return db.batch(rollbackBatch, _cb);
         }
       });
