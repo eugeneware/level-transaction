@@ -4,6 +4,7 @@ var expect = require('expect.js'),
     level = require('level'),
     range = require('range'),
     after = require('after'),
+    setImmediate = global.setImmediate || process.nextTick,
     tx = require('..');
 
 describe('level-transaction', function() {
