@@ -74,7 +74,7 @@ function txBatch(batch, opts, cb) {
     return db.batch.call(db, batch, opts, function (err) {
       if (err) return cb(err);
 
-      var tid = setTimeout(rollback, db._txTimeout);
+      var tid = setTimeout(rollback, (opts && opts.txTimeout) || db._txTimeout);
 
       function rollback(_cb) {
         clearTimeout(tid);
