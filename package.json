@@ -26,7 +26,8 @@
   },
   "dependencies": {
     "after": "~0.8.1",
-    "lodash.uniq": "~2.1.0"
+    "lodash.uniq": "~2.1.0",
+    "lodash.intersection": "~2.1.0"
   },
   "devDependencies": {
     "expect.js": "~0.2.0",

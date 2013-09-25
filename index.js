@@ -1,6 +1,7 @@
 var after = require('after'),
     setImmediate = global.setImmediate || process.nextTick,
-    unique = require('lodash.uniq');
+    unique = require('lodash.uniq'),
+    intersection = require('lodash.intersection');
 
 module.exports = tx;
 function tx(db) {
@@ -9,7 +10,7 @@ function tx(db) {
   db.txDel = db.txDel || txDel.bind(db);
   db.txGet = db.txGet || txGet.bind(db);
   db._txKeys = [];
-  db._txTimeout = 500; // transaction timeout in ms
+  db._txTimeout = 30000; // transaction timeout in ms
   return db;
 }
 
@@ -46,23 +47,28 @@ function txBatch(batch, opts, cb) {
     return op.key;
   }));
 
-  db._txKeys = db._txKeys.concat(keys);
+  var doBatch = function() {
+    if (intersection(keys, db._txKeys).length) return setImmediate(doBatch);
 
-  var next = after(keys.length, _batch);
-  keys.forEach(function (key) {
-    db.get(key, function (err, value) {
-      var type = 'put';
-      if (err) {
-        if (err.type !== 'NotFoundError') {
-          return next(err);
-        } else {
-          type = 'del';
+    db._txKeys = db._txKeys.concat(keys);
+
+    var next = after(keys.length, _batch);
+    keys.forEach(function (key) {
+      db.get(key, function (err, value) {
+        var type = 'put';
+        if (err) {
+          if (err.type !== 'NotFoundError') {
+            return next(err);
+          } else {
+            type = 'del';
+          }
         }
-      }
-      rollbackBatch.push({ type: type, key: key, value: value });
-      next();
+        rollbackBatch.push({ type: type, key: key, value: value });
+        next();
+      });
     });
-  });
+  };
+  doBatch();
 
   function unblockReads() {
     db._txKeys = db._txKeys.filter(function (key) {
@@ -86,7 +92,7 @@ function txBatch(batch, opts, cb) {
         commit: function (_cb) {
           clearTimeout(tid);
           unblockReads();
-          setImmediate(_cb.bind(null));
+          setImmediate((_cb || noop).bind(null));
         },
         rollback: rollback
       });
