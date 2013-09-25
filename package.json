@@ -1,7 +1,7 @@
 {
   "name": "level-transaction",
   "version": "0.0.1",
-  "description": "Two-phase commits and rollbacks for leveldb/levelup databases.",
+  "description": "Transactions, commits and rollbacks for leveldb/levelup databases.",
   "main": "index.js",
   "scripts": {
     "test": "node_modules/.bin/grunt ci"
