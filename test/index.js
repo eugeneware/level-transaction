@@ -171,7 +171,7 @@ describe('level-transaction', function() {
     }
   });
 
-  it('should block key writes during a transaction', function(done) {
+  it('should block key reads during a transaction', function(done) {
     db = tx(db);
     var next = after(2, done);
     db.txPut('key 1', 'value 1', function (err, tx) {
@@ -197,7 +197,7 @@ describe('level-transaction', function() {
     }
   });
 
-  it('should block key writes during a transaction with rollback', function(done) {
+  it('should block key reads during a transaction with rollback', function(done) {
     db = tx(db);
     var next = after(2, done);
     db.txPut('key 1', 'value 1', function (err, tx) {
@@ -222,7 +222,7 @@ describe('level-transaction', function() {
     }
   });
 
-  it('should block key deletes during a transaction', function(done) {
+  it('should block key reads (deletes) during a transaction', function(done) {
     db = tx(db);
     var batch = range(0, 10).map(function (i) {
       return {
@@ -259,7 +259,7 @@ describe('level-transaction', function() {
     }
   });
 
-  it('should block key deletes during a transaction with rollback', function(done) {
+  it('should block key (deletes) during a transaction with rollback', function(done) {
     db = tx(db);
     var batch = range(0, 10).map(function (i) {
       return {
