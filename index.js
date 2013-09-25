@@ -85,14 +85,20 @@ function txBatch(batch, opts, cb) {
       function rollback(_cb) {
         clearTimeout(tid);
         unblockReads();
-        return db.batch(rollbackBatch, _cb || noop);
+        return db.batch(rollbackBatch, function (err) {
+          db.emit('rollback');
+          (_cb || noop)(err);
+        });
       }
 
       return cb(null, {
         commit: function (_cb) {
           clearTimeout(tid);
           unblockReads();
-          setImmediate((_cb || noop).bind(null));
+          setImmediate(function () {
+            db.emit('commit');
+            (_cb || noop)(null);
+          });
         },
         rollback: rollback
       });

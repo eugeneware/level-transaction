@@ -302,15 +302,15 @@ describe('level-transaction', function() {
     db = tx(db);
 
     var start = Date.now();
+    db.once('rollback', get1);
     db.txPut('key 1', 'value 1', { txTimeout: 200 }, function (err, tx) {
       if (err) return done(err);
-      get1();
     });
 
     function get1() {
-      db.txGet('key 1', function (err, value) {
+      db.get('key 1', function (err, value) {
+        // console.log(err, value);
         expect(err.type).to.equal('NotFoundError');
-        expect(Date.now() - start).to.be.above(200);
         done();
       });
     }
@@ -344,10 +344,12 @@ describe('level-transaction', function() {
 
     function get2(err) {
       if (err) return done(err);
-      db.get('key 1', function (err, value) {
-        if (err) return done(err);
-        expect(value).to.equal('value 1');
-        next();
+      setImmediate(function () {
+        db.txGet('key 1', function (err, value) {
+          if (err) return done(err);
+          expect(value).to.equal('value 2');
+          next();
+        });
       });
     }
   });
