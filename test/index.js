@@ -386,4 +386,70 @@ describe('level-transaction', function() {
         });
     }
   });
+
+  it('should be able to block keystreams on a transaction', function(done) {
+    var batch = range(0, 10).map(function (i) {
+      return {
+        type: 'put',
+        key: 'key ' + i,
+        value: 'value ' + i
+      };
+    });
+
+    db = tx(db);
+    var start = Date.now();
+    var delay = 250;
+    db.txBatch(batch, function (err, tx) {
+      if (err) return done(err);
+      setTimeout(tx.commit.bind(tx), delay);
+      stream(done);
+    });
+
+    function stream(cb) {
+      var count = 0;
+      db.txCreateKeyStream({ start: 'key 5', end: 'key 7' })
+        .on('data', function (data) {
+          expect(Date.now()).to.be.above(start + delay);
+          expect(data).to.match(/^key [5-7]$/);
+          count++;
+        })
+        .on('end', function () {
+          expect(count).to.equal(3);
+          cb();
+        });
+    }
+  });
+
+  it('should be able to block valuestreams on a transaction', function(done) {
+    var batch = range(0, 10).map(function (i) {
+      return {
+        type: 'put',
+        key: 'key ' + i,
+        value: 'value ' + i
+      };
+    });
+
+    db = tx(db);
+    var start = Date.now();
+    var delay = 250;
+    db.txBatch(batch, function (err, tx) {
+      if (err) return done(err);
+      setTimeout(tx.commit.bind(tx), delay);
+      stream(done);
+    });
+
+    function stream(cb) {
+      var count = 0;
+      db.txCreateValueStream({ start: 'key 5', end: 'key 7' })
+        .on('data', function (data) {
+          expect(Date.now()).to.be.above(start + delay);
+          expect(data).to.match(/^value [5-7]$/);
+          count++;
+        })
+        .on('end', function () {
+          expect(count).to.equal(3);
+          cb();
+        });
+    }
+  });
 });

@@ -11,7 +11,9 @@ function tx(db) {
   db.txBatch = db.txBatch || txBatch.bind(db);
   db.txDel = db.txDel || txDel.bind(db);
   db.txGet = db.txGet || txGet.bind(db);
-  db.txCreateReadStream = db.txCreateReadStream || txCreateReadStream.bind(db);
+  db.txCreateReadStream = db.txCreateReadStream || txFutureStream(db, 'createReadStream');
+  db.txCreateKeyStream = db.txCreateKeyStream || txFutureStream(db, 'createKeyStream');
+  db.txCreateValueStream = db.txCreateValueStream || txFutureStream(db, 'createValueStream');
   db._txKeys = [];
   db._txTimeout = 10000; // transaction timeout in ms
   return db;
@@ -20,19 +22,20 @@ function tx(db) {
 function noop() {
 }
 
-function txCreateReadStream(options) {
-  var db = this;
-  function check() {
-    var keys = db._txKeys.filter(function (key) {
-      return range(key, options);
-    });
-    return keys.length === 0;
-  }
-  if (check()) {
-    return db.createReadStream(options);
-  } else {
-    return futureStream(db.createReadStream.bind(db, options), check);
-  }
+function txFutureStream(db, methodName) {
+  return function (options) {
+    function check() {
+      var keys = db._txKeys.filter(function (key) {
+        return range(key, options);
+      });
+      return keys.length === 0;
+    }
+    if (check()) {
+      return db[methodName](options);
+    } else {
+      return futureStream(db[methodName].bind(db, options), check);
+    }
+  };
 }
 
 function txGet(key, opts, cb) {
