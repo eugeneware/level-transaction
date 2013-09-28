@@ -23,14 +23,13 @@ function txGet(key, opts, cb) {
     opts = undefined;
   }
   var db = this;
-  var check = function () {
+  (function check() {
     if (~db._txKeys.indexOf(key)) {
       setImmediate(check);
     } else {
       db.get(key, opts, cb);
     }
-  };
-  check();
+  })();
 }
 
 function txBatch(batch, opts, cb) {
@@ -47,7 +46,7 @@ function txBatch(batch, opts, cb) {
     return op.key;
   }));
 
-  var doBatch = function() {
+  (function doBatch() {
     if (intersection(keys, db._txKeys).length) return setImmediate(doBatch);
 
     db._txKeys = db._txKeys.concat(keys);
@@ -67,8 +66,7 @@ function txBatch(batch, opts, cb) {
         next();
       });
     });
-  };
-  doBatch();
+  })();
 
   function unblockReads() {
     db._txKeys = db._txKeys.filter(function (key) {
