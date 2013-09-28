@@ -1,7 +1,9 @@
 var after = require('after'),
     setImmediate = global.setImmediate || process.nextTick,
     unique = require('lodash.uniq'),
-    intersection = require('lodash.intersection');
+    intersection = require('lodash.intersection'),
+    range = require('key-range'),
+    futureStream = require('future-stream');
 
 module.exports = tx;
 function tx(db) {
@@ -9,12 +11,28 @@ function tx(db) {
   db.txBatch = db.txBatch || txBatch.bind(db);
   db.txDel = db.txDel || txDel.bind(db);
   db.txGet = db.txGet || txGet.bind(db);
+  db.txCreateReadStream = db.txCreateReadStream || txCreateReadStream.bind(db);
   db._txKeys = [];
   db._txTimeout = 10000; // transaction timeout in ms
   return db;
 }
 
 function noop() {
+}
+
+function txCreateReadStream(options) {
+  var db = this;
+  function check() {
+    var keys = db._txKeys.filter(function (key) {
+      return range(key, options);
+    });
+    return keys.length === 0;
+  }
+  if (check()) {
+    return db.createReadStream(options);
+  } else {
+    return futureStream(db.createReadStream.bind(db, options), check);
+  }
 }
 
 function txGet(key, opts, cb) {
