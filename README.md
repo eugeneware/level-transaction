@@ -92,7 +92,7 @@ Any `txDel` operations will block any other `txPut`, `txGet`, `txDel`, and
 `txBatch` operations where the keys intersect with the key being written for
 this `txPut` operation.
 
-### db#txBatch(opArray,[, opts][, callback])
+### db#txBatch(opArray[, opts][, callback])
 
 Executes the array `opArray` of levelup operations wrapped in a single
 transaction.
