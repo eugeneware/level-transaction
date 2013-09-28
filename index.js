@@ -10,7 +10,7 @@ function tx(db) {
   db.txDel = db.txDel || txDel.bind(db);
   db.txGet = db.txGet || txGet.bind(db);
   db._txKeys = [];
-  db._txTimeout = 30000; // transaction timeout in ms
+  db._txTimeout = 10000; // transaction timeout in ms
   return db;
 }
 
