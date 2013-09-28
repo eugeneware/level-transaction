@@ -104,6 +104,24 @@ Any `txBatch` operations will block any other `txPut`, `txGet`, `txDel`, and
 `txBatch` operations where the keys intersect with the key being written for
 this `txPut` operation.
 
+### db#txCreateReadStream([options])
+
+Generates a read stream, but blocks the creation of the stream until any
+transactions that could affect the read stream (ie. are in the range of
+`options.start` and `options.end`) are resolved.
+
+### db#txCreateValueStream([options])
+
+Generates a value stream, but blocks the creation of the stream until any
+transactions that could affect the value stream (ie. are in the range of
+`options.start` and `options.end`) are resolved.
+
+### db#txCreateKeyStream([options])
+
+Generates a key stream, but blocks the creation of the stream until any
+transactions that could affect the key stream (ie. are in the range of
+`options.start` and `options.end`) are resolved.
+
 ## transaction object API
 
 The transaction object gets returned as a second parameter in the callbacks of
