@@ -69,9 +69,7 @@ function txBatch(batch, opts, cb) {
   })();
 
   function unblockReads() {
-    db._txKeys = db._txKeys.filter(function (key) {
-      return !~keys.indexOf(key);
-    });
+    db._txKeys = [];
   }
 
   function _batch() {
