@@ -122,6 +122,11 @@ Generates a key stream, but blocks the creation of the stream until any
 transactions that could affect the key stream (ie. are in the range of
 `options.start` and `options.end`) are resolved.
 
+### db#txCreateWriteStream([options])
+
+Generates a write stream, but blocks writes for any keys that are involved in
+transactions.
+
 ## transaction object API
 
 The transaction object gets returned as a second parameter in the callbacks of

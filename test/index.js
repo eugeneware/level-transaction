@@ -5,6 +5,7 @@ var expect = require('expect.js'),
     range = require('range'),
     after = require('after'),
     setImmediate = global.setImmediate || process.nextTick,
+    Stream = require('stream');
     tx = require('..');
 
 describe('level-transaction', function() {
@@ -310,7 +311,6 @@ describe('level-transaction', function() {
 
     function get1() {
       db.get('key 1', function (err, value) {
-        // console.log(err, value);
         expect(err.type).to.equal('NotFoundError');
         done();
       });
@@ -450,6 +450,78 @@ describe('level-transaction', function() {
           expect(count).to.equal(3);
           cb();
         });
+    }
+  });
+
+  it('should be able to block writesteams on a transaction', function(done) {
+    function generator(n) {
+      var s = new Stream();
+      s.readable = true;
+      var i = 0;
+      function next() {
+        s.emit('data', { key: 'key ' + i, value: 'written ' + i });
+        if (++i < n) {
+          setImmediate(next);
+        } else {
+          s.emit('end');
+        }
+      }
+      setImmediate(next);
+      return s;
+    }
+
+    var batch = range(5, 7).map(function (i) {
+      return {
+        type: 'put',
+        key: 'key ' + i,
+        value: 'value ' + i
+      };
+    });
+
+    db = tx(db);
+    var start = Date.now();
+    var delay = 250;
+    db.txBatch(batch, function (err, tx) {
+      if (err) return done(err);
+      setTimeout(tx.commit.bind(tx), delay);
+      stream(done);
+    });
+
+    function stream(cb) {
+      generator(7).pipe(db.txCreateWriteStream())
+      .on('close', function () {
+        expect(Date.now()).to.be.above(start + delay);
+        check(cb);
+      });
+    }
+
+    function check(cb) {
+      var expectations = {
+        'key 0': 'written 0',
+        'key 1': 'written 1',
+        'key 2': 'written 2',
+        'key 3': 'written 3',
+        'key 4': 'written 4',
+        'key 5': 'written 5',
+        'key 6': 'written 6'
+      };
+      var keys = Object.keys(expectations);
+      var next = after(keys.length, verify);
+      var results = {};
+      keys.forEach(function (key) {
+        db.get(key, function (err, data) {
+          if (err) return next(err);
+          results[key] = data;
+          next();
+        });
+      });
+      function verify(err) {
+        if (err) return cb(err);
+        keys.forEach(function (key) {
+          expect(results[key]).to.equal(expectations[key]);
+        });
+        cb();
+      }
     }
   });
 });

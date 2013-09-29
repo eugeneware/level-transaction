@@ -14,6 +14,7 @@ function tx(db) {
   db.txCreateReadStream = db.txCreateReadStream || txFutureStream(db, 'createReadStream');
   db.txCreateKeyStream = db.txCreateKeyStream || txFutureStream(db, 'createKeyStream');
   db.txCreateValueStream = db.txCreateValueStream || txFutureStream(db, 'createValueStream');
+  db.txCreateWriteStream = db.txCreateWriteStream || txCreateWriteStream.bind(db);
   db._txKeys = [];
   db._txTimeout = 10000; // transaction timeout in ms
   return db;
@@ -36,6 +37,14 @@ function txFutureStream(db, methodName) {
       return futureStream(db[methodName].bind(db, options), check);
     }
   };
+}
+
+function txCreateWriteStream(options) {
+  var db = this;
+  function check(data) {
+    return !~db._txKeys.indexOf(data.key);
+  }
+  return futureStream.write(db.createWriteStream.bind(db, options), check);
 }
 
 function txGet(key, opts, cb) {

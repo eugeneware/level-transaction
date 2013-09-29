@@ -29,7 +29,7 @@
     "lodash.uniq": "~2.1.0",
     "lodash.intersection": "~2.1.0",
     "key-range": "0.0.1",
-    "future-stream": "0.0.1"
+    "future-stream": "~0.2.1"
   },
   "devDependencies": {
     "expect.js": "~0.2.0",
